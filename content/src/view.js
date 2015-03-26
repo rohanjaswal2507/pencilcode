@@ -164,6 +164,7 @@ window.pencilcode.view = {
   flashNotification: flashNotification,
   dismissNotification: dismissNotification,
   flashButton: flashButton,
+  flashThumbnail: flashThumbnail,
   // Show login (or create account) dialog.
   showLoginDialog: showLoginDialog,
   // Show share dialog.
@@ -404,6 +405,18 @@ function flashButton(id) {
           .animate({opacity:1},
       function(n){$(this).css({backgroundColor: bg});});
   }
+}
+
+function flashThumbnail(PaneCanvas) {
+  var tooltip = $('#save').tooltipster({
+    content: $('<img src=' + PaneCanvas + '>'),
+    multiple: true,
+    position: 'bottom',
+    theme: 'tooltipster-light',
+    timer: 3000,
+    trigger: 'custom'
+  })[0];
+  tooltip.show();
 }
 
 ///////////////////////////////////////////////////////////////////////////

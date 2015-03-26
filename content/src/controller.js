@@ -716,6 +716,70 @@ view.on('toggleblocks', function(p, useblocks) {
       view.getPaneEditorLanguage(p));
 });
 
+function takePaneSnapshot() {
+  var TARGET_SIZE = 128;
+
+  var iframe = document.getElementsByTagName('iframe')[0];
+  var innerDoc = iframe.contentDocument || iframe.contentWindow.document;
+  var canvas = innerDoc.getElementsByTagName('canvas')[0];
+  var width = canvas.width;
+  var height = canvas.height;
+
+  // Get image data
+  var context = canvas.getContext('2d');
+  var imageData = context.getImageData(0, 0, w, h);
+
+  //set image coordinates
+  var topLeft = { x: height, y: width };
+  var bottomRight = { x: 0, y: 0 };
+
+  // Iterate through all the points to find the correct topLeft and bottomRight.
+  var x, y, index;
+  for (y = 0; y < height; y++) {
+    for (x = 0; x < width; x++) {
+      index = (y * w + x) * 4;
+      if (imageData.data[index + 3] > 0) {
+        if (x < topLeft.x) {
+          topLeft.x = x;
+        }
+        if (x > bottomRight.x) {
+          bottomRight.x = x;
+        }
+        if (y < topLeft.y) {
+          topLeft.y = y;
+        }
+        if (y > bottomRight.y) {
+          bottomRight.y = y;
+        }
+      }
+    }
+  }
+
+  // Calculate image size.
+  var imageWidth = bottomRight.x - topLeft.x + 1;
+  var imageHeight = bottomRight.y - topLeft.y + 1;
+
+  // Find the longer edge and make it a square
+  var diff = imageHeight - imageWidth;
+  if ( diff < 0) {
+    longerEdge = imageWidth;
+    topLeft.y -= (diff/2);
+  } else {
+    longerEdge = imageHeight;
+    topLeft.x -= (diff/2);
+  }
+
+  // Draw the cropped image in a canvas
+  var resultCanvas = document.createElement('canvas');
+  resultCanvas.width = TARGET_SIZE;
+  resultCanvas.height = TARGET_SIZE;
+  resultCanvas.getContext('2d').drawImage(canvas, // source canvas
+    topLeft.x, topLeft.y, longerEdge, longerEdge, // src coordinates and size
+    0, 0, TARGET_SIZE, TARGET_SIZE); // dest coordinates and size
+
+  return tempCanvas.toDataURL();
+}
+
 function saveAction(forceOverwrite, loginPrompt, doneCallback) {
   if (nosaveowner()) {
     return;
@@ -752,6 +816,10 @@ function saveAction(forceOverwrite, loginPrompt, doneCallback) {
       }
     }
     updateTopControls();
+    
+    // Flash the thumbnail
+    var PaneCanvas = takePaneSnapshot();
+    view.flashThumbnail(PaneCanvas);
   }
   if (newdata.auth && model.ownername != model.username) {
     // If we know auth is required and the user isn't logged in,
